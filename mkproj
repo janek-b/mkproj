@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 mkproj() {
-	local OPTIND=1
+	local OPTIND
 
 	usage() {
 		local prog=${0##*/}
@@ -30,7 +30,7 @@ mkproj() {
 
 	alone=false
 	base=false
-	while getopts ':h:a:b' option; do
+	while getopts ':hab' opt; do
 		case $opt in
 			h) usage; return 0;;
 			a) alone=true;;
