@@ -15,7 +15,7 @@ source <(curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/mkproj)
 
 ### Usage
 ```
-usage: mkproj [-hab] <ProjectName> <ClassName>
+usage: mkproj [-ha] <ProjectName> <ClassName>
 
 creates initial files and directories for a new java project,
 populates files with initial boilerplate,
@@ -31,7 +31,6 @@ options
 
     -h             print this message and exit
     -a             working alone, will not use git pair-commit.
-    -b             prompt to change base directory
 ```
 ### How to use
 paste the below into the terminal
@@ -53,6 +52,11 @@ It will not override a project directory if it already exists.
 If you are not working in a pair use the -a flag. It will retrieve the name to use from the .gitconfig file.
 ```
 mkproj -a ProjectName ClassName
+```
+
+If you want to store you projects in a location other than the Desktop create a variable EPICODUS_DIR with the path directory.
+```
+echo "export EPICODUS_DIR=${HOME}/code/epicodus/java" >> ~/.bash_profile
 ```
 
 In addition to creating new project directories it adds aliases to shorten some comman commands.

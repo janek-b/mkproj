@@ -5,7 +5,7 @@ mkproj() {
 		local prog=${0##*/}
 		cat <<-EOF
 
-	  usage: $prog [-hab] <ProjectName> <ClassName>
+	  usage: $prog [-ha] <ProjectName> <ClassName>
 
 	  creates initial files and directories for a new java project,
 	  populates files with initial boilerplate,
@@ -21,20 +21,17 @@ mkproj() {
 
 	      -h             print this message and exit
 	      -a             working alone, will not use git pair-commit.
-	      -b             prompt to change base directory
 
 		EOF
 	}
 
 	alone=false
-	base=false
 	local OPTIND opt
 	while getopts ':h:a:b:' opt; do
 		projname="${OPTARG}"
 		case $opt in
 			h) usage; return 0;;
 			a) alone=true;;
-			b) base=true;;
 			*) usage; return 1;;
 		esac
 	done
@@ -76,17 +73,10 @@ mkproj() {
 		dirname=$(toDashSeperated $projname)
 	fi
 
-	basedir=~/Desktop
-
-	if $base; then
-		echo 'Enter the directory you want to store your project in.'
-		read basedir
-		if [[ -d $basedir ]]; then
-			echo "using $basedir as the base directory for your projects"
-		else
-			echo "error: $basedir does not exist"
-			return 1
-		fi
+	if [[ -n $EPICODUS_DIR ]]; then
+		basedir=${EPICODUS_DIR}
+	else
+		basedir=~/Desktop
 	fi
 
 	projdir=$basedir/$dirname
