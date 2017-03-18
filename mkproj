@@ -27,7 +27,7 @@ mkproj() {
 
 	alone=false
 	local OPTIND opt
-	while getopts ':h:a:b:' opt; do
+	while getopts ':h:a:' opt; do
 		projname="${OPTARG}"
 		case $opt in
 			h) usage; return 0;;
