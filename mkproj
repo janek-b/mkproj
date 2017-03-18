@@ -268,4 +268,3 @@ mkproj() {
 }
 
 export -f mkproj
-$SHELL
