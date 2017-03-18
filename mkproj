@@ -31,10 +31,10 @@ mkproj() {
 	base=false
 	while getopts ':h:a:b' option; do
 		case $opt in
-			h) usage; exit 0;;
+			h) usage; return 0;;
 			a) alone=true;;
 			b) base=true;;
-			*) usage; exit 1;;
+			*) usage; return 1;;
 		esac
 	done
 	shift $((OPTIND - 1))
@@ -57,7 +57,7 @@ mkproj() {
 		echo "error: no project name give" >&2
 		echo "Enter the name of your project in UpperCamelCase"
 		read projname
-		# usage; exit 1
+		# usage; return 1
 	fi
 
 
@@ -83,7 +83,7 @@ mkproj() {
 
 		else
 			echo "error: $basedir does not exist"
-			exit 1
+			return 1
 		fi
 	fi
 
@@ -124,7 +124,7 @@ mkproj() {
 
 	if [[ -d $projdir ]]; then
 		echo "error: directory $projdir already exists" >&2
-		usage; exit 1
+		usage; return 1
 	fi
 
 
