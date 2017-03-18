@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 mkproj() {
+	local OPTIND
 
 	usage() {
 		local prog=${0##*/}
