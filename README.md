@@ -59,8 +59,10 @@ In addition to creating new project directories it adds aliases to shorten some 
 
 ```
 gpc  =  git-pair-commit
+gpc -m "commit message"
 
 jr   =  java -cp build/classes/main
+jr App
 ```
 The command jr allows you to run your compiled java application without moving into the build directory.
 
