@@ -5,7 +5,7 @@ mkproj() {
 		local prog=${0##*/}
 		cat <<-EOF
 
-	  usage: $prog [-hab] <ProjectName>
+	  usage: $prog [-hab] <ProjectName> <ClassName>
 
 	  creates initial files and directories for a new java project,
 	  populates files with initial boilerplate,
@@ -14,7 +14,7 @@ mkproj() {
 
 	  examples
 
-	      # $prog NewJavaProject
+	      # $prog NewJavaProject JavaClass
 	      create new java project directory and populate initial files
 
 	  options
@@ -28,8 +28,9 @@ mkproj() {
 
 	alone=false
 	base=false
-	local OPTIND
+	local OPTIND opt
 	while getopts ':h:a:b:' opt; do
+		projname="${OPTARG}"
 		case $opt in
 			h) usage; return 0;;
 			a) alone=true;;
@@ -51,18 +52,20 @@ mkproj() {
 	}
 
 
+	if [[ $alone == false ]]; then
+		projname=$1
+		shift
+	fi
 
-	projname=$1
 	if [[ -z $projname ]]; then
 		echo "error: no project name give" >&2
 		echo "Enter the name of your project in UpperCamelCase"
 		read projname
-		# usage; return 1
 	fi
 
 
-	if [[ -n $2 ]]; then
-		classname=$(toCamelCase $2)
+	if [[ -n $1 ]]; then
+		classname=$(toCamelCase $1)
 	else
 		classname=$(toCamelCase $projname)
 	fi
@@ -80,7 +83,6 @@ mkproj() {
 		read basedir
 		if [[ -d $basedir ]]; then
 			echo "using $basedir as the base directory for your projects"
-
 		else
 			echo "error: $basedir does not exist"
 			return 1
@@ -260,11 +262,7 @@ mkproj() {
 		gir pair-commit -m "add initial project directories and files"
 	fi
 	atom .
-	# make aliases
-
-	# test curl to bash
-	# curl | bash -s args
-	# test working alone
 }
 
-# export -f mkproj
+alias jr='java -cp build/classes/main/'
+alias gpc='git pair-commit'
