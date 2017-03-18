@@ -267,5 +267,5 @@ mkproj() {
 	# test working alone
 }
 
-# export -f mkproj
+export -f mkproj
 $SHELL
