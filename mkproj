@@ -28,7 +28,7 @@ mkproj() {
 
 	alone=false
 	base=false
-	local OPTIND opt
+	local OPTIND
 	while getopts ':h:a:b:' opt; do
 		case $opt in
 			h) usage; return 0;;
