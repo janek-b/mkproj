@@ -113,7 +113,7 @@ mkproj() {
 			pairs:
 			  ${user1}: ${user1full}
 			  ${user2}: ${user2full}
-			emails:
+			email:
 			  ${user1}: ${user1email}
 			  ${user2}: ${user2email}
 			END
