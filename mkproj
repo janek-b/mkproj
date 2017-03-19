@@ -5,7 +5,7 @@ mkproj() {
 		local prog=${0##*/}
 		cat <<-EOF
 
-	  usage: $prog [-ha] <ProjectName> <ClassName>
+	  usage: $prog [-ha] <ProjectName> <ClassName> <ClassNameTwo>
 
 	  creates initial files and directories for a new java project,
 	  populates files with initial boilerplate,
@@ -14,7 +14,7 @@ mkproj() {
 
 	  examples
 
-	      # $prog NewJavaProject JavaClass
+	      # $prog NewJavaProject JavaClass OtherJavaClass
 	      create new java project directory and populate initial files
 
 	  options
@@ -25,7 +25,21 @@ mkproj() {
 		EOF
 	}
 
-	alone=false
+	# Declare local variables
+	local projname
+	local classname
+	local dirname
+	local basedir
+	local projdir
+	local user1
+	local user1full
+	local user1email
+	local user2
+	local user2full
+	local user2email
+	local users
+
+	local alone=false
 	local OPTIND opt
 	while getopts ':h:a:' opt; do
 		projname="${OPTARG}"
@@ -39,7 +53,7 @@ mkproj() {
 
 	toCamelCase() {
 		local dash=$1
-		arr=(${dash//-/ })
+		local arr=(${dash//-/ })
 		echo "$(printf %s "${arr[@]^}")"
 	}
 
@@ -48,23 +62,15 @@ mkproj() {
 		echo $(echo "$camel" | sed 's/\(.\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
 	}
 
-
 	if [[ $alone == false ]]; then
 		projname=$1
 		shift
 	fi
 
 	if [[ -z $projname ]]; then
-		echo "error: no project name give" >&2
+		echo "error: no project name given" >&2
 		echo "Enter the name of your project in UpperCamelCase"
 		read projname
-	fi
-
-
-	if [[ -n $1 ]]; then
-		classname=$(toCamelCase $1)
-	else
-		classname=$(toCamelCase $projname)
 	fi
 
 	if [[ $projname == *"-"* ]]; then
@@ -121,33 +127,40 @@ mkproj() {
 
 
 	# make directories
-	mkdir -p $projdir/src/main/java $projdir/src/test/java
+	mkdir -p $projdir/src/main/java $projdir/src/test/java $projdir/src/main/resources/public/images $projdir/src/main/resources/templates
 	# create and populate files
 	cat >$projdir/src/main/java/App.java <<-END
+	import static spark.Spark.*;
+
 	public class App {
 	  public static void main(String[] args) {
+	    staticFileLocation("/public");
+
+	    get("/", (request, response) -> "");
 
 	  }
 	}
 	END
 
-	cat >$projdir/src/main/java/$classname.java <<-END
-	import java.util.ArrayList;
-	import java.util.List;
+	for arg in $@; do
+		classname=$(toCamelCase $arg)
 
-	public class ${classname} {
+		cat >$projdir/src/main/java/$classname.java <<-END
+		public class ${classname} {
 
-	}
-	END
+		}
+		END
 
-	cat >$projdir/src/test/java/${classname}Test.java <<-END
-	import org.junit.*;
-	import static org.junit.Assert.*;
+		cat >$projdir/src/test/java/${classname}Test.java <<-END
+		import org.junit.*;
+		import static org.junit.Assert.*;
 
-	public class ${classname}Test {
+		public class ${classname}Test {
 
-	}
-	END
+		}
+		END
+
+	done
 
 	cat >$projdir/build.gradle <<-END
 	apply plugin: 'java'
@@ -155,13 +168,15 @@ mkproj() {
 
 	archivesBaseName = "${dirname}"
 	version = '1.0'
-	mainClassName = "${classname}"
+	mainClassName = "App"
 
 	repositories {
 	  mavenCentral()
 	}
 
 	dependencies {
+	  compile group: 'com.sparkjava', name: 'spark-core', version: '2.3'
+	  compile group: 'org.apache.velocity', name: 'velocity', version: '1.7'
 	  testCompile group: 'junit', name: 'junit', version: '4.+'
 	}
 	END
@@ -239,6 +254,8 @@ mkproj() {
 
 	This software is licensed under the MIT license.
 	END
+
+	curl -s https://raw.githubusercontent.com/perwendel/spark-template-engines/master/spark-template-velocity/src/main/java/spark/template/velocity/VelocityTemplateEngine.java -o $projdir/src/main/java/VelocityTemplateEngine.java
 
 
 	# Initalize git and make first commit

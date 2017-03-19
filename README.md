@@ -10,21 +10,21 @@ _This Bash script automates the creation of a java project. It populates initial
 paste the below into the terminal
 
 ```
-source <(curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/mkproj)
+eval "$(curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/mkproj)"
 ```
 
 ### Usage
 ```
-usage: mkproj [-ha] <ProjectName> <ClassName>
+usage: mkproj [-ha] <ProjectName> <ClassNameOne> <ClassNameTwo>
 
 creates initial files and directories for a new java project,
 populates files with initial boilerplate,
 initializes git with pairs,
-adds useful aliases to simplify repetative tasks
+adds useful aliases to simplify repetitive tasks
 
 examples
 
-    # mkproj NewJavaProject JavaClass
+    # mkproj NewJavaProject JavaClass OtherJavaClass
     create new java project directory and populate initial files
 
 options
@@ -36,14 +36,14 @@ options
 paste the below into the terminal
 
 ```
-source <(curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/mkproj)
+eval "$(curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/mkproj)"
 ```
 
 This will load a function into the shell which will allow you to create a new project by typing.
 ```
 mkproj ProjectName ClassName
 ```
-If no class name is provided it will use the project name as the name for the primary class.
+You can provide multiple ClassNames after the project name and it will create a .java file and matching test.java file for it.
 
 If no .pairs file exists it will prompt to enter partner names and will generate a .pairs file.
 
