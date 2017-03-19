@@ -41,6 +41,11 @@ Paste the command below into the terminal.
 eval "$(curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/mkproj)"
 ```
 
+If you're running bash 4.0 or later use this command. (not default version on mac)
+```
+source <(curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/mkproj)
+```
+
 #### Example
 
 Running this command:
