@@ -67,6 +67,7 @@ Will generate this directory structure.
 │   │   │   │   ├── VelocityTemplateEngine.java
 │   │   │   ├── resources/
 │   │   │   │   ├── public/
+│   │   │   │   │   ├── app.css
 │   │   │   │   │   ├── images/
 │   │   │   │   ├── templates/
 │   │   │   │   │   ├── layout.vtl
