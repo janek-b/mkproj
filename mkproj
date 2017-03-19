@@ -139,13 +139,13 @@ mkproj() {
 	public class App {
 	  public static void main(String[] args) {
 	    staticFileLocation("/public");
-	    String layout = "templates/layout.vtl"
+	    String layout = "templates/layout.vtl";
 
 	    get("/", (request, response) -> {
 	      Map<String, Object> model = new HashMap<String, Object>();
 	      model.put("template", "template/CHANGEME.vtl");
 	      return new ModelAndView(model, layout);
-	    }, new VelocitytemplateEngine());
+	    }, new VelocityTemplateEngine());
 
 	  }
 	}
@@ -181,7 +181,7 @@ mkproj() {
 	  <body>
 	    <!-- begin inner template-->
 	    <div class="container">
-	      #parse( $template )
+	      #parse( \$template )
 	    </div>
 	    <!-- end inner template-->
 	  </body>
