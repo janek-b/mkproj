@@ -130,6 +130,9 @@ mkproj() {
 	mkdir -p $projdir/src/main/java $projdir/src/test/java $projdir/src/main/resources/public/images $projdir/src/main/resources/templates
 	# create and populate files
 	cat >$projdir/src/main/java/App.java <<-END
+	import java.util.HashMap;
+	import spark.ModelAndView;
+	import spark.template.velocity.VelocityTemplateEngine;
 	import static spark.Spark.*;
 
 	public class App {
