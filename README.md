@@ -54,7 +54,7 @@ If you are not working in a pair use the -a flag. It will retrieve the name to u
 mkproj -a ProjectName ClassName
 ```
 
-If you want to store you projects in a location other than the Desktop create a variable EPICODUS_DIR with the path directory.
+If you want to store you projects in a location other than the Desktop create an environment variable EPICODUS_DIR with the path directory.
 ```
 echo "export EPICODUS_DIR=${HOME}/code/epicodus/java" >> ~/.bash_profile
 ```
