@@ -143,7 +143,7 @@ mkproj() {
 
 	    get("/", (request, response) -> {
 	      Map<String, Object> model = new HashMap<String, Object>();
-	      model.put("template", "template/CHANGEME.vtl");
+	      model.put("template", "templates/CHANGEME.vtl");
 	      return new ModelAndView(model, layout);
 	    }, new VelocityTemplateEngine());
 
