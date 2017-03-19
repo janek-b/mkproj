@@ -130,6 +130,7 @@ mkproj() {
 	mkdir -p $projdir/src/main/java $projdir/src/test/java $projdir/src/main/resources/public/images $projdir/src/main/resources/templates
 	# create and populate files
 	cat >$projdir/src/main/java/App.java <<-END
+	import java.util.Map;
 	import java.util.HashMap;
 	import spark.ModelAndView;
 	import spark.template.velocity.VelocityTemplateEngine;
@@ -138,8 +139,13 @@ mkproj() {
 	public class App {
 	  public static void main(String[] args) {
 	    staticFileLocation("/public");
+	    String layout = "templates/layout.vtl"
 
-	    get("/", (request, response) -> "");
+	    get("/", (request, response) -> {
+	      Map<String, Object> model = new HashMap<String, Object>();
+	      model.put("template", "template/CHANGEME.vtl");
+	      return new ModelAndView(model, layout);
+	    }, new VelocitytemplateEngine());
 
 	  }
 	}
@@ -164,6 +170,23 @@ mkproj() {
 		END
 
 	done
+
+	cat >$projdir/src/main/resources/templates/layout.vtl <<-END
+	<!DOCTYPE html>
+	<html>
+	  <head>
+	    <title>${projname}</title>
+	    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	  </head>
+	  <body>
+	    <!-- begin inner template-->
+	    <div class="container">
+	      #parse( $template )
+	    </div>
+	    <!-- end inner template-->
+	  </body>
+	</html>
+	END
 
 	cat >$projdir/build.gradle <<-END
 	apply plugin: 'java'

@@ -69,6 +69,7 @@ Will generate this directory structure.
 │   │   │   │   ├── public/
 │   │   │   │   │   ├── images/
 │   │   │   │   ├── templates/
+│   │   │   │   │   ├── layout.vtl
 │   │   ├── test/
 │   │   │   ├── java/
 │   │   │   │   ├── ClassOneTest.java
