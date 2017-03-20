@@ -123,6 +123,6 @@ The command jr allows you to run your compiled java application without moving i
 
 ### License
 
-Copyright (c) 2017) **_Janek Brandt_**
+Copyright (c) 2017 **_Janek Brandt_**
 
 This software is licensed under the MIT license.
