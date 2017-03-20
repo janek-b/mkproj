@@ -85,6 +85,11 @@ mkproj ProjectName ClassName
 ```
 You can provide multiple ClassNames after the project name and it will create a .java file and matching test.java file for each.
 
+If you need to add a class later on you can use the mkclass command from the projects root directory to create a .java and a test.java file for the classes provided.
+```
+mkclass ClassOne ClassTwo
+```
+
 If no .pairs file exists it will prompt to enter your names and will generate a .pairs file for you.
 
 It will not override a project directory if it already exists.

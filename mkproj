@@ -27,7 +27,6 @@ mkproj() {
 
 	# Declare local variables
 	local projname
-	local classname
 	local dirname
 	local basedir
 	local projdir
@@ -51,6 +50,7 @@ mkproj() {
 	done
 	shift $((OPTIND - 1))
 
+	# Helper functions
 	toCamelCase() {
 		local dash=$1
 		local arr=(${dash//-/ })
@@ -60,6 +60,32 @@ mkproj() {
 	toDashSeperated() {
 		local camel=$1
 		echo $(echo "$camel" | sed 's/\(.\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
+	}
+
+	mkclass() {
+		if [[ -d ./src/main/java ]]; then
+			for arg in $@; do
+				local classname=$(toCamelCase $arg)
+
+				cat >./src/main/java/$classname.java <<-END
+				public class ${classname} {
+
+				}
+				END
+
+				cat >./src/test/java/${classname}Test.java <<-END
+				import org.junit.*;
+				import static org.junit.Assert.*;
+
+				public class ${classname}Test {
+
+				}
+				END
+
+			done
+		else
+			echo "Error: no src/main/java directory found. You are not in the project root directory"
+		fi
 	}
 
 	if [[ $alone == false ]]; then
@@ -125,11 +151,14 @@ mkproj() {
 		usage; return 1
 	fi
 
-
 	# make directories
 	mkdir -p $projdir/src/main/java $projdir/src/test/java $projdir/src/main/resources/public/images $projdir/src/main/resources/templates
+
 	# create and populate files
-	touch $projdir/src/main/resouces/public/app.css
+	cd "$projdir"
+	mkclass $@
+
+	touch $projdir/src/main/resources/public/app.css
 	cat >$projdir/src/main/java/App.java <<-END
 	import java.util.Map;
 	import java.util.HashMap;
@@ -152,32 +181,12 @@ mkproj() {
 	}
 	END
 
-	for arg in $@; do
-		classname=$(toCamelCase $arg)
-
-		cat >$projdir/src/main/java/$classname.java <<-END
-		public class ${classname} {
-
-		}
-		END
-
-		cat >$projdir/src/test/java/${classname}Test.java <<-END
-		import org.junit.*;
-		import static org.junit.Assert.*;
-
-		public class ${classname}Test {
-
-		}
-		END
-
-	done
-
 	cat >$projdir/src/main/resources/templates/layout.vtl <<-END
 	<!DOCTYPE html>
 	<html>
 	  <head>
 	    <title>${projname}</title>
-			<link rel="stylesheet" href="/app.css">
+	    <link rel="stylesheet" href="/app.css">
 	    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 	  </head>
 	  <body>
@@ -272,8 +281,8 @@ mkproj() {
 	## Setup/Installation Requirements
 
 	* _Clone the repository_
-	* _Run 'gradle compilJava' or if gradle is not installed run 'javac App.java' in src/main/java directory_
-	* _Run 'java App' inside build directory_
+	* _Run the command'gradle run'_
+	* _Open browser and go to localhost:4567_
 
 
 	### License
@@ -285,9 +294,7 @@ mkproj() {
 
 	curl -s https://raw.githubusercontent.com/perwendel/spark-template-engines/master/spark-template-velocity/src/main/java/spark/template/velocity/VelocityTemplateEngine.java -o $projdir/src/main/java/VelocityTemplateEngine.java
 
-
 	# Initalize git and make first commit
-	cd "$projdir"
 	git init
 	git add .
 	if $alone; then
