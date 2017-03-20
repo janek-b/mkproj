@@ -301,7 +301,7 @@ mkproj() {
 		git commit -m "add initial project directories and files"
 	else
 		git pair $user1 $user2
-		gir pair-commit -m "add initial project directories and files"
+		git pair-commit -m "add initial project directories and files"
 	fi
 	atom .
 }
