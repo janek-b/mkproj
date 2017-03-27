@@ -30,6 +30,7 @@ mkproj() {
 	local dirname
 	local basedir
 	local projdir
+	local dbname
 	local user1
 	local user1full
 	local user1email
@@ -77,20 +78,42 @@ mkproj() {
 
 	mkclass() {
 		if [[ -d ./src/main/java ]]; then
+			local dir=$(pwd)
+			local db=$(echo "${dir##*/}" | sed 's/-/_/g')
 			for arg in $@; do
 				local classname=$(toCamelCase $arg)
 
 				cat >./src/main/java/$classname.java <<-END
+				import org.sql2o.*;
+
 				public class ${classname} {
+
+				  public ${classname}() {
+
+				  }
 
 				}
 				END
 
 				cat >./src/test/java/${classname}Test.java <<-END
+				import org.sql2o.*;
 				import org.junit.*;
 				import static org.junit.Assert.*;
 
 				public class ${classname}Test {
+
+				  @Before
+				  public void setUp() {
+				    DB.sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${db}_test", null, null);
+				  }
+
+				  @After
+				  public void tearDown() {
+				    try (Connection con = DB.sql2o.open()) {
+				      String sql = "DELETE FROM name_of_your_table *;"
+				      con.createQuery(sql).executeUpdate();
+				    }
+				  }
 
 				}
 				END
@@ -124,6 +147,7 @@ mkproj() {
 		basedir=~/Desktop
 	fi
 
+	dbname=$(echo "$dirname" | sed 's/-/_/g')
 	projdir=$basedir/$dirname
 
 	if $alone; then
@@ -165,13 +189,14 @@ mkproj() {
 	fi
 
 	# make directories
-	mkdir -p $projdir/src/main/java $projdir/src/test/java $projdir/src/main/resources/public/images $projdir/src/main/resources/templates
+	mkdir -p $projdir/src/main/java $projdir/src/test/java $projdir/src/main/resources/public/images $projdir/src/main/resources/templates $projdir/src/main/resources/public/js
 
 	# create and populate files
 	cd "$projdir"
 	mkclass $@
 
 	touch $projdir/src/main/resources/public/app.css
+	touch $projdir/src/main/resources/public/js/scripts.js
 	cat >$projdir/src/main/java/App.java <<-END
 	import java.util.Map;
 	import java.util.HashMap;
@@ -194,6 +219,14 @@ mkproj() {
 	}
 	END
 
+	cat >$projdir/src/main/java/DB.java <<-END
+	import org.sql2o.*;
+
+	public class DB {
+	  public static Sql2o sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${dbname}", null, null);
+	}
+	END
+
 	cat >$projdir/src/main/resources/templates/layout.vtl <<-END
 	<!DOCTYPE html>
 	<html>
@@ -201,6 +234,8 @@ mkproj() {
 	    <title>${projname}</title>
 	    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 	    <link rel="stylesheet" href="/app.css">
+	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	    <script src="/js/scripts.js"></script>
 	  </head>
 	  <body>
 	    <!-- begin inner template-->
@@ -234,6 +269,8 @@ mkproj() {
 	  compile group: 'com.sparkjava', name: 'spark-core', version: '2.3'
 	  compile group: 'org.apache.velocity', name: 'velocity', version: '1.7'
 	  testCompile group: 'junit', name: 'junit', version: '4.+'
+	  compile group: 'org.sql2o', name: 'sql2o', version: '1.5.4'
+	  compile group: 'org.postgresql', name: 'postgresql', version: "9.4-1201-jdbc41"
 	}
 	END
 
@@ -327,3 +364,7 @@ mkproj() {
 
 alias jr='java -cp build/classes/main/'
 alias gpc='git pair-commit'
+
+export CLICOLOR=1
+alias ll='ls -alh'
+bind 'set completion-ignore-case on'
