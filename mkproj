@@ -78,8 +78,8 @@ mkproj() {
 
 	mkclass() {
 		if [[ -d ./src/main/java ]]; then
-			local dir=$(pwd)
-			local db=$(echo "${dir##*/}" | sed 's/-/_/g')
+			# local dir=$(pwd)
+			# local db=$(echo "${dir##*/}" | sed 's/-/_/g')
 			for arg in $@; do
 				local classname=$(toCamelCase $arg)
 
@@ -102,18 +102,8 @@ mkproj() {
 
 				public class ${classname}Test {
 
-				  @Before
-				  public void setUp() {
-				    DB.sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${db}_test", null, null);
-				  }
-
-				  @After
-				  public void tearDown() {
-				    try (Connection con = DB.sql2o.open()) {
-				      String sql = "DELETE FROM name_of_your_table *;";
-				      con.createQuery(sql).executeUpdate();
-				    }
-				  }
+				  @Rule
+				  public DatabaseRule databse = new DatabaseRule();
 
 				}
 				END
@@ -192,6 +182,28 @@ mkproj() {
 	mkdir -p $projdir/src/main/java $projdir/src/test/java $projdir/src/main/resources/public/images $projdir/src/main/resources/templates $projdir/src/main/resources/public/js
 
 	# create and populate files
+
+	cat >$projdir/src/test/java/DatabaseRule.java <<-END
+	import org.junit.rules.ExternalResource;
+	import org.sql2o.*;
+
+	public class DatabaseRule extends ExternalResource {
+
+	  @Override
+	  protected void before() {
+	    DB.sql2o = new Sql2o("jbdc:postgresql://localhost:5432/${dbname}_test", null, null);
+	  }
+
+	  @Override
+	  protected void after() {
+	    try (Connection con = DB.sql2o.open()) {
+	      String deleteTABLE = "DELETE FROM TABLE *;";
+	      con.createQuery(deleteTABLE).executeUpdate();
+	    }
+	  }
+	}
+	END
+
 	cd "$projdir"
 	mkclass $@
 
