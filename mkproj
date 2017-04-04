@@ -1,65 +1,5 @@
 #!/usr/bin/env bash
 
-toCamelCase() {
-	local dash=$1
-	local arr=(${dash//-/ })
-	local word
-	for s in ${arr[@]}; do
-		word="$word$(tr '[:lower:]' '[:upper:]' <<< ${s:0:1})${s:1}"
-	done
-	echo $word
-}
-
-toDashSeperated() {
-	local camel=$1
-	echo $(echo "$camel" | sed 's/\(.\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
-}
-
-mkclass() {
-	if [[ -d ./src/main/java ]]; then
-		for arg in $@; do
-			local classname=$(toCamelCase $arg)
-			local tablename=$(toDashSeperated $arg | sed 's/-/_/g')
-
-			if [[ -f ./src/test/java/DatabaseRule.java ]]; then
-				sed ' s/.*open().*/&\
-      String delete'${classname}'Query = "DELETE FROM '${tablename}'s *;";\
-      con.createQuery(delete'${classname}'Query).executeUpdate();/
-				' ./src/test/java/DatabaseRule.java >> ./src/test/java/TempDatabaseRule.java
-				mv ./src/test/java/TempDatabaseRule.java ./src/test/java/DatabaseRule.java
-			fi
-
-			cat >./src/main/java/$classname.java <<-END
-			import org.sql2o.*;
-
-			public class ${classname} {
-
-			  public ${classname}() {
-
-			  }
-
-			}
-			END
-
-			cat >./src/test/java/${classname}Test.java <<-END
-			import org.sql2o.*;
-			import org.junit.*;
-			import static org.junit.Assert.*;
-
-			public class ${classname}Test {
-
-			  @Rule
-			  public DatabaseRule databse = new DatabaseRule();
-
-			}
-			END
-
-		done
-	else
-		echo "Error: no src/main/java directory found. You are not in the project root directory"
-	fi
-}
-
 mkproj() {
 	usage() {
 		local prog=${0##*/}
@@ -120,6 +60,106 @@ mkproj() {
 	# 	echo "$(printf %s "${arr[@]^}")"
 	# }
 	###
+
+	toCamelCase() {
+		local dash=$1
+		local arr=(${dash//-/ })
+		local word
+		for s in ${arr[@]}; do
+			word="$word$(tr '[:lower:]' '[:upper:]' <<< ${s:0:1})${s:1}"
+		done
+		echo $word
+	}
+
+	toDashSeperated() {
+		local camel=$1
+		echo $(echo "$camel" | sed 's/\(.\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
+	}
+
+	mkclass() {
+		if [[ -d ./src/main/java ]]; then
+			local dir=$(pwd)
+			local db=$(echo "${dir##*/}" | sed 's/-/_/g')
+			for arg in $@; do
+				local classname=$(toCamelCase $arg)
+
+				cat >./src/main/java/$classname.java <<-END
+				import org.sql2o.*;
+				import java.util.Arrays;
+				import java.util.List;
+				import java.util.ArrayList;
+				import java.util.Date;
+				import java.util.Timer;
+				import java.util.TimerTask;
+				import java.sql.Timestamp;
+
+				public class ${classname} {
+
+				  public ${classname}() {
+
+				  }
+
+				}
+				END
+
+				cat >./src/test/java/${classname}Test.java <<-END
+				import org.sql2o.*;
+				import org.junit.*;
+				import static org.junit.Assert.*;
+				import java.util.Arrays;
+				import java.util.List;
+				import java.util.ArrayList;
+				import java.util.Date;
+				import java.util.Timer;
+				import java.util.TimerTask;
+				import java.sql.Timestamp;
+
+				public class ${classname}Test {
+
+				  @Before
+				  public void setUp() {
+				    DB.sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${db}_test", null, null);
+				  }
+
+				  @After
+				  public void tearDown() {
+				    try (Connection con = DB.sql2o.open()) {
+				      String sql = "DELETE FROM name_of_your_table *;";
+				      con.createQuery(sql).executeUpdate();
+				    }
+				  }
+
+				}
+				END
+
+				cat >./src/test/java/DatabaseRule.java <<-END
+				import org.junit.rules.ExternalResource;
+				import org.sql2o.*;
+
+				public class DatabaseRule extends ExternalResource {
+
+				  @Override
+				    protected void before() {
+				    DB.sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${db}_test", null, null);
+				  }
+
+				  @Override
+				  protected void after() {
+				    try(Connection con = DB.sql2o.open()) {
+				      String deleteNAMEOFYOURTABLEQuery = "DELETE FROM name_of_your_table *;";
+				      con.createQuery(deleteNAMEOFYOURTABLEQuery).executeUpdate();
+				    }
+				  }
+
+				}
+
+				END
+
+			done
+		else
+			echo "Error: no src/main/java directory found. You are not in the project root directory"
+		fi
+	}
 
 	if [[ $alone == false ]]; then
 		projname=$1
