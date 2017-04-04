@@ -85,6 +85,13 @@ mkproj() {
 
 				cat >./src/main/java/$classname.java <<-END
 				import org.sql2o.*;
+				import java.util.Arrays;
+				import java.util.List;
+				import java.util.ArrayList;
+				import java.util.Date;
+				import java.util.Timer;
+				import java.util.TimerTask;
+				import java.sql.Timestamp;
 
 				public class ${classname} {
 
@@ -99,6 +106,13 @@ mkproj() {
 				import org.sql2o.*;
 				import org.junit.*;
 				import static org.junit.Assert.*;
+				import java.util.Arrays;
+				import java.util.List;
+				import java.util.ArrayList;
+				import java.util.Date;
+				import java.util.Timer;
+				import java.util.TimerTask;
+				import java.sql.Timestamp;
 
 				public class ${classname}Test {
 
@@ -116,6 +130,29 @@ mkproj() {
 				  }
 
 				}
+				END
+
+				cat >./src/test/java/DatabaseRule.java <<-END
+				import org.junit.rules.ExternalResource;
+				import org.sql2o.*;
+
+				public class DatabaseRule extends ExternalResource {
+
+				  @Override
+				    protected void before() {
+				    DB.sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${db}_test", null, null);
+				  }
+
+			    @Override
+				  protected void after() {
+				    try(Connection con = DB.sql2o.open()) {
+				      String deleteNAMEOFYOURTABLEQuery = "DELETE FROM name_of_your_table *;";
+				      con.createQuery(deleteNAMEOFYOURTABLEQuery).executeUpdate();
+				    }
+				  }
+
+				}
+
 				END
 
 			done
