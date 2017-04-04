@@ -5,22 +5,22 @@ mkproj() {
 		local prog=${0##*/}
 		cat <<-EOF
 
-	  usage: $prog [-ha] <ProjectName> <ClassName> <ClassNameTwo>
+		  usage: $prog [-ha] <ProjectName> <ClassName> <ClassNameTwo>
 
-	  creates initial files and directories for a new java project,
-	  populates files with initial boilerplate,
-	  initializes git with pairs,
-	  adds useful aliases to simplify repetative tasks
+		  creates initial files and directories for a new java project,
+		  populates files with initial boilerplate,
+		  initializes git with pairs,
+		  adds useful aliases to simplify repetative tasks
 
-	  examples
+		  examples
 
-	      # $prog NewJavaProject JavaClass OtherJavaClass
-	      create new java project directory and populate initial files
+		    # $prog NewJavaProject JavaClass OtherJavaClass
+		    create new java project directory and populate initial files
 
-	  options
+		  options
 
-	      -h             print this message and exit
-	      -a             working alone, will not use git pair-commit.
+		    -h             print this message and exit
+		    -a             working alone, will not use git pair-commit.
 
 		EOF
 	}
