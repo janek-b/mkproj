@@ -62,6 +62,7 @@ Will generate this directory structure.
 │   │   ├── main/
 │   │   │   ├── java/
 │   │   │   │   ├── App.java
+│   │   │   │   ├── DB.java
 │   │   │   │   ├── ClassOne.java
 │   │   │   │   ├── ClassTwo.java
 │   │   │   │   ├── VelocityTemplateEngine.java
@@ -69,10 +70,14 @@ Will generate this directory structure.
 │   │   │   │   ├── public/
 │   │   │   │   │   ├── app.css
 │   │   │   │   │   ├── images/
+│   │   │   │   │   ├── js/
+│   │   │   │   │   │   ├── scripts.js
 │   │   │   │   ├── templates/
 │   │   │   │   │   ├── layout.vtl
+│   │   │   │   │   ├── index.vtl
 │   │   ├── test/
 │   │   │   ├── java/
+│   │   │   │   ├── DatabaseRule.java
 │   │   │   │   ├── ClassOneTest.java
 │   │   │   │   ├── ClassTwoTest.java
 ```
