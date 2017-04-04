@@ -21,6 +21,15 @@ mkclass() {
 		# local db=$(echo "${dir##*/}" | sed 's/-/_/g')
 		for arg in $@; do
 			local classname=$(toCamelCase $arg)
+			local tablename=$(toDashSeperated $arg | sed 's/-/_/g')
+
+			if [[ -f ./src/test/java/DatabaseRule.java ]]; then
+				sed ' s/.*open().*/&\
+      String delete'${classname}'Query = "DELETE FROM '${tablename}'s *;";\
+      con.createQuery(delete'${classname}'Query).executeUpdate();/
+				' ./src/test/java/DatabaseRule.java >> ./src/test/java/TempDatabaseRule.java
+				mv ./src/test/java/TempDatabaseRule.java ./src/test/java/DatabaseRule.java
+			fi
 
 			cat >./src/main/java/$classname.java <<-END
 			import org.sql2o.*;
@@ -213,8 +222,6 @@ mkproj() {
 	  @Override
 	  protected void after() {
 	    try(Connection con = DB.sql2o.open()) {
-	      String deleteNAMEOFYOURTABLEQuery = "DELETE FROM name_of_your_table *;";
-	      con.createQuery(deleteNAMEOFYOURTABLEQuery).executeUpdate();
 	    }
 	  }
 	}
@@ -388,10 +395,10 @@ mkproj() {
 		git pair $user1 $user2
 		git pair-commit -m "add initial project directories and files"
 	fi
+	apm install language-velocity
 	atom .
 }
 
-alias jr='java -cp build/classes/main/'
 alias gpc='git pair-commit'
 
 export CLICOLOR=1
