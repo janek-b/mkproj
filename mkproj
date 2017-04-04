@@ -5,22 +5,22 @@ mkproj() {
 		local prog=${0##*/}
 		cat <<-EOF
 
-	  usage: $prog [-ha] <ProjectName> <ClassName> <ClassNameTwo>
+		usage: $prog [-ha] <ProjectName> <ClassName> <ClassNameTwo>
 
-	  creates initial files and directories for a new java project,
-	  populates files with initial boilerplate,
-	  initializes git with pairs,
-	  adds useful aliases to simplify repetative tasks
+		creates initial files and directories for a new java project,
+		populates files with initial boilerplate,
+		initializes git with pairs,
+		adds useful aliases to simplify repetative tasks
 
-	  examples
+		examples
 
-	      # $prog NewJavaProject JavaClass OtherJavaClass
-	      create new java project directory and populate initial files
+		# $prog NewJavaProject JavaClass OtherJavaClass
+		create new java project directory and populate initial files
 
-	  options
+		options
 
-	      -h             print this message and exit
-	      -a             working alone, will not use git pair-commit.
+		-h             print this message and exit
+		-a             working alone, will not use git pair-commit.
 
 		EOF
 	}
@@ -85,12 +85,20 @@ mkproj() {
 
 				cat >./src/main/java/$classname.java <<-END
 				import org.sql2o.*;
+				import java.util.Arrays;
+				import java.util.List;
+				import java.util.ArrayList;
+				import java.util.Date;
+				import java.util.Timer;
+				import java.util.TimerTask;
+				import java.sql.Timestamp;
+
 
 				public class ${classname} {
 
-				  public ${classname}() {
+					public ${classname}() {
 
-				  }
+					}
 
 				}
 				END
@@ -99,23 +107,43 @@ mkproj() {
 				import org.sql2o.*;
 				import org.junit.*;
 				import static org.junit.Assert.*;
+        import java.util.Arrays;
+        import java.util.List;
+        import java.util.ArrayList;
+        import java.util.Date;
+        import java.util.Timer;
+        import java.util.TimerTask;
+        import java.sql.Timestamp;
 
 				public class ${classname}Test {
 
-				  @Before
-				  public void setUp() {
-				    DB.sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${db}_test", null, null);
-				  }
-
-				  @After
-				  public void tearDown() {
-				    try (Connection con = DB.sql2o.open()) {
-				      String sql = "DELETE FROM name_of_your_table *;";
-				      con.createQuery(sql).executeUpdate();
-				    }
-				  }
+					@Rule
+					public DatabaseRule database = new DatabaseRule();
 
 				}
+				END
+
+				cat >./src/test/java/DatabaseRule.java <<-END
+				import org.junit.rules.ExternalResource;
+				import org.sql2o.*;
+
+				public class DatabaseRule extends ExternalResource {
+
+					@Override
+					protected void before() {
+						DB.sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${db}_test", null, null);
+					}
+
+					@Override
+					protected void after() {
+						try(Connection con = DB.sql2o.open()) {
+							String deleteNAMEOFYOURTABLEQuery = "DELETE FROM name_of_your_table *;";
+							con.createQuery(deleteNAMEOFYOURTABLEQuery).executeUpdate();
+						}
+					}
+
+				}
+
 				END
 
 			done
@@ -174,11 +202,11 @@ mkproj() {
 			user2=$(echo $user2full | awk '{print tolower($1), tolower($2)}' | sed 's/ *\([^ ]\)[^ ]\{1,\} */\1/g')
 			cat >~/.pairs <<-END
 			pairs:
-			  ${user1}: ${user1full}
-			  ${user2}: ${user2full}
+			${user1}: ${user1full}
+			${user2}: ${user2full}
 			email:
-			  ${user1}: ${user1email}
-			  ${user2}: ${user2email}
+			${user1}: ${user1email}
+			${user2}: ${user2email}
 			END
 		fi
 	fi
@@ -205,17 +233,17 @@ mkproj() {
 	import static spark.Spark.*;
 
 	public class App {
-	  public static void main(String[] args) {
-	    staticFileLocation("/public");
-	    String layout = "templates/layout.vtl";
+		public static void main(String[] args) {
+			staticFileLocation("/public");
+			String layout = "templates/layout.vtl";
 
-	    get("/", (request, response) -> {
-	      Map<String, Object> model = new HashMap<String, Object>();
-	      model.put("template", "templates/index.vtl");
-	      return new ModelAndView(model, layout);
-	    }, new VelocityTemplateEngine());
+			get("/", (request, response) -> {
+				Map<String, Object> model = new HashMap<String, Object>();
+				model.put("template", "templates/index.vtl");
+				return new ModelAndView(model, layout);
+			}, new VelocityTemplateEngine());
 
-	  }
+		}
 	}
 	END
 
@@ -223,27 +251,27 @@ mkproj() {
 	import org.sql2o.*;
 
 	public class DB {
-	  public static Sql2o sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${dbname}", null, null);
+		public static Sql2o sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${dbname}", null, null);
 	}
 	END
 
 	cat >$projdir/src/main/resources/templates/layout.vtl <<-END
 	<!DOCTYPE html>
 	<html>
-	  <head>
-	    <title>${projname}</title>
-	    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-	    <link rel="stylesheet" href="/app.css">
-	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-	    <script src="/js/scripts.js"></script>
-	  </head>
-	  <body>
-	    <!-- begin inner template-->
-	    <div class="container">
-	      #parse( \$template )
-	    </div>
-	    <!-- end inner template-->
-	  </body>
+	<head>
+	<title>${projname}</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<link rel="stylesheet" href="/app.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<script src="/js/scripts.js"></script>
+	</head>
+	<body>
+	<!-- begin inner template-->
+	<div class="container">
+	#parse( \$template )
+	</div>
+	<!-- end inner template-->
+	</body>
 	</html>
 	END
 
@@ -262,15 +290,15 @@ mkproj() {
 	mainClassName = "App"
 
 	repositories {
-	  mavenCentral()
+		mavenCentral()
 	}
 
 	dependencies {
-	  compile group: 'com.sparkjava', name: 'spark-core', version: '2.3'
-	  compile group: 'org.apache.velocity', name: 'velocity', version: '1.7'
-	  testCompile group: 'junit', name: 'junit', version: '4.+'
-	  compile group: 'org.sql2o', name: 'sql2o', version: '1.5.4'
-	  compile group: 'org.postgresql', name: 'postgresql', version: "9.4-1201-jdbc41"
+		compile group: 'com.sparkjava', name: 'spark-core', version: '2.3'
+		compile group: 'org.apache.velocity', name: 'velocity', version: '1.7'
+		testCompile group: 'junit', name: 'junit', version: '4.+'
+		compile group: 'org.sql2o', name: 'sql2o', version: '1.5.4'
+		compile group: 'org.postgresql', name: 'postgresql', version: "9.4-1201-jdbc41"
 	}
 	END
 
