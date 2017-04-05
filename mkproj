@@ -216,7 +216,7 @@ mkproj() {
 
 	  @Override
 	  protected void before() {
-	    DB.sql2o = new Sql2o("jbdc:postgresql://localhost:5432/${dbname}_test", null, null);
+	    DB.sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${dbname}_test", null, null);
 	  }
 
 	  @Override
