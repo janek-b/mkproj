@@ -241,6 +241,9 @@ mkproj() {
 
 	public class App {
 	  public static void main(String[] args) {
+	    // Use this setting only for development
+	    externalStaticFileLocation(String.format("%s/src/main/resources/public", System.getProperty("user.dir")));
+	
 	    staticFileLocation("/public");
 	    String layout = "templates/layout.vtl";
 
