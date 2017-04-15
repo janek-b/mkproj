@@ -243,7 +243,7 @@ mkproj() {
 	  public static void main(String[] args) {
 	    // Use this setting only for development
 	    externalStaticFileLocation(String.format("%s/src/main/resources/public", System.getProperty("user.dir")));
-	
+
 	    staticFileLocation("/public");
 	    String layout = "templates/layout.vtl";
 
@@ -353,6 +353,13 @@ mkproj() {
 	############
 	build/
 	.gradle/
+
+	# Javascript and Node #
+	############
+	node_modules/
+	bower_components/
+	build/
+	tmp/
 	END
 
 	cat >$projdir/README.md <<-END
