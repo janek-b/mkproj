@@ -1,4 +1,21 @@
 #!/usr/bin/env bash
+# - atom settings
+# - git pairs file
+# - README
+# - gitignore
+# - gulpfile
+# - git pairs password cache
+
+# atom settings. figure out sed insert mode.
+atomcfg() {
+	sed ' s/editor:/&\
+    scrollPastEnd: true\
+    showIndentGuide: true\
+    showInvisibles: true\
+    softWrap: true/
+	' ~/.atom/config.cson >> ~/.atom/tmpconfig.cson
+	mv ~/.atom/tmpconfig.cson ~/.atom/config.cson
+}
 
 toCamelCase() {
 	local dash=$1
@@ -360,6 +377,7 @@ mkproj() {
 	bower_components/
 	build/
 	tmp/
+	.env
 	END
 
 	cat >$projdir/README.md <<-END
