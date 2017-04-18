@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 atomcfg() {
 	local settings=("scrollPastEnd: true" "showIndentGuide: true" "showInvisibles: true" "softWrap: true")
@@ -6,10 +6,8 @@ atomcfg() {
 		grep -q -e "$s" ~/.atom/config.cson || sed ' s/editor:/&\
     '"$s"'/
 		' ~/.atom/config.cson >> ~/.atom/tmpconfig.cson
-	done
-	if [[ -f ~/.atom/tmpconfig.cson ]]; then
 		mv ~/.atom/tmpconfig.cson ~/.atom/config.cson
-	fi
+	done
 }
 
 toCamelCase() {
@@ -273,7 +271,7 @@ mkproj() {
 		git pair-commit -m "add initial project directories and files"
 	fi
 
-	#atomcfg
+	atomcfg
 	atom .
 }
 
