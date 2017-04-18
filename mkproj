@@ -147,10 +147,10 @@ mkproj() {
 	# static files
 
 	# .gitignore file
-	curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/templates/gitignore -o $projdir/.gitignore
+	curl -s https://raw.githubusercontent.com/janek-b/mkproj/js/templates/gitignore -o $projdir/.gitignore
 
 	# gulpfile.js
-	curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/templates/gulpfile.js -o $projdir/gulpfile.js
+	curl -s https://raw.githubusercontent.com/janek-b/mkproj/js/templates/gulpfile.js -o $projdir/gulpfile.js
 
 	# dynamic files
 
