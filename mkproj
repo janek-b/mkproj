@@ -7,7 +7,9 @@ atomcfg() {
     '"$s"'/
 		' ~/.atom/config.cson >> ~/.atom/tmpconfig.cson
 	done
-	mv ~/.atom/tmpconfig.cson ~/.atom/config.cson
+	if [[ -f ~/.atom/tmpconfig.cson ]]; then
+		mv ~/.atom/tmpconfig.cson ~/.atom/config.cson
+	fi
 }
 
 toCamelCase() {
