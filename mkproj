@@ -273,7 +273,7 @@ mkproj() {
 		git pair-commit -m "add initial project directories and files"
 	fi
 
-	atomcfg
+	#atomcfg
 	atom .
 }
 
