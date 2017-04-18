@@ -13,6 +13,12 @@ paste the below into the terminal
 eval "$(curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/mkproj)"
 ```
 
+for js script use the below command
+
+```
+eval "$(curl -s https://raw.githubusercontent.com/janek-b/mkproj/js/mkproj)"
+```
+
 ### Usage
 ```
 usage: mkproj [-ha] <ProjectName> <ClassNameOne> <ClassNameTwo>
