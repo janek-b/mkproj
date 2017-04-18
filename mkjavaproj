@@ -1,0 +1,409 @@
+#!/usr/bin/env bash
+
+toCamelCase() {
+	local dash=$1
+	local arr=(${dash//-/ })
+	local word
+	for s in ${arr[@]}; do
+		word="$word$(tr '[:lower:]' '[:upper:]' <<< ${s:0:1})${s:1}"
+	done
+	echo $word
+}
+
+toDashSeperated() {
+	local camel=$1
+	echo $(echo "$camel" | sed 's/\(.\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
+}
+
+mkclass() {
+	if [[ -d ./src/main/java ]]; then
+		# local dir=$(pwd)
+		# local db=$(echo "${dir##*/}" | sed 's/-/_/g')
+		for arg in $@; do
+			local classname=$(toCamelCase $arg)
+			local tablename=$(toDashSeperated $arg | sed 's/-/_/g')
+
+			if [[ -f ./src/test/java/DatabaseRule.java ]]; then
+				sed ' s/.*open().*/&\
+      String delete'${classname}'Query = "DELETE FROM '${tablename}'s *;";\
+      con.createQuery(delete'${classname}'Query).executeUpdate();/
+				' ./src/test/java/DatabaseRule.java >> ./src/test/java/TempDatabaseRule.java
+				mv ./src/test/java/TempDatabaseRule.java ./src/test/java/DatabaseRule.java
+			fi
+
+			cat >./src/main/java/$classname.java <<-END
+			import org.sql2o.*;
+			import java.util.Arrays;
+			import java.util.List;
+			import java.util.ArrayList;
+			import java.util.Date;
+			import java.util.Timer;
+			import java.util.TimerTask;
+			import java.sql.Timestamp;
+
+			public class ${classname} {
+
+			  public ${classname}() {
+
+			  }
+
+			}
+			END
+
+			cat >./src/test/java/${classname}Test.java <<-END
+			import org.sql2o.*;
+			import org.junit.*;
+			import static org.junit.Assert.*;
+			import java.util.Arrays;
+			import java.util.List;
+			import java.util.ArrayList;
+			import java.util.Date;
+			import java.util.Timer;
+			import java.util.TimerTask;
+			import java.sql.Timestamp;
+
+			public class ${classname}Test {
+
+			  @Rule
+			  public DatabaseRule database = new DatabaseRule();
+
+			}
+			END
+
+		done
+	else
+		echo "Error: no src/main/java directory found. You are not in the project root directory"
+	fi
+}
+
+
+
+mkproj() {
+	usage() {
+		local prog=${0##*/}
+		cat <<-EOF
+
+		  usage: $prog [-ha] <ProjectName> <ClassName> <ClassNameTwo>
+
+		  creates initial files and directories for a new java project,
+		  populates files with initial boilerplate,
+		  initializes git with pairs,
+		  adds useful aliases to simplify repetative tasks
+
+		  examples
+
+		    # $prog NewJavaProject JavaClass OtherJavaClass
+		    create new java project directory and populate initial files
+
+		  options
+
+		    -h             print this message and exit
+		    -a             working alone, will not use git pair-commit.
+
+		EOF
+	}
+
+	# Declare local variables
+	local projname
+	local dirname
+	local basedir
+	local projdir
+	local dbname
+	local user1
+	local user1full
+	local user1email
+	local user2
+	local user2full
+	local user2email
+	local users
+
+	local alone=false
+	local OPTIND opt
+	while getopts ':h:a:' opt; do
+		projname="${OPTARG}"
+		case $opt in
+			h) usage; return 0;;
+			a) alone=true;;
+			*) usage; return 1;;
+		esac
+	done
+	shift $((OPTIND - 1))
+
+	# Helper functions
+
+	### doesn't work in older bash version
+	# toCamelCase() {
+	# 	local dash=$1
+	# 	local arr=(${dash//-/ })
+	# 	echo "$(printf %s "${arr[@]^}")"
+	# }
+	###
+
+	if [[ $alone == false ]]; then
+		projname=$1
+		shift
+	fi
+
+	if [[ -z $projname ]]; then
+		echo "error: no project name given" >&2
+		echo "Enter the name of your project in UpperCamelCase"
+		read projname
+	fi
+
+	if [[ $projname == *"-"* ]]; then
+		dirname=$(echo "$projname" | awk '{print tolower($0)}')
+	else
+		dirname=$(toDashSeperated $projname)
+	fi
+
+	if [[ -n $EPICODUS_DIR ]]; then
+		basedir=${EPICODUS_DIR}
+	else
+		basedir=~/Desktop
+	fi
+
+	dbname=$(echo "$dirname" | sed 's/-/_/g')
+	projdir=$basedir/$dirname
+
+	if $alone; then
+		users=$(cat ~/.gitconfig | sed -n -e 's/^.name = //p')
+	else
+		if [[ -f ~/.pairs ]]; then
+			user1=$(awk -F ': ' '{if(NR==2) print $1}' ~/.pairs)
+			user2=$(awk -F ': ' '{if(NR==3) print $1}' ~/.pairs)
+			user1full=$(awk -F ': ' '{if(NR==2) print $2}' ~/.pairs)
+			user2full=$(awk -F ': ' '{if(NR==3) print $2}' ~/.pairs)
+			users="$user1full and $user2full"
+		else
+			echo "No .pairs file was found. Enter information to generate one"
+			echo "Enter first persons full name"
+			read user1full
+			echo "Enter first persons email"
+			read user1email
+			echo "Enter second persons full name"
+			read user2full
+			echo "Enter second persons email"
+			read user2email
+			users="$user1full and $user2full"
+			user1=$(echo $user1full | awk '{print tolower($1), tolower($2)}' | sed 's/ *\([^ ]\)[^ ]\{1,\} */\1/g')
+			user2=$(echo $user2full | awk '{print tolower($1), tolower($2)}' | sed 's/ *\([^ ]\)[^ ]\{1,\} */\1/g')
+			cat >~/.pairs <<-END
+			pairs:
+			  ${user1}: ${user1full}
+			  ${user2}: ${user2full}
+			email:
+			  ${user1}: ${user1email}
+			  ${user2}: ${user2email}
+			END
+		fi
+	fi
+
+	if [[ -d $projdir ]]; then
+		echo "error: directory $projdir already exists" >&2
+		usage; return 1
+	fi
+
+	# make directories
+	mkdir -p $projdir/src/main/java $projdir/src/test/java $projdir/src/main/resources/public/images $projdir/src/main/resources/templates $projdir/src/main/resources/public/js
+
+	# create and populate files
+
+	cat >$projdir/src/test/java/DatabaseRule.java <<-END
+	import org.junit.rules.ExternalResource;
+	import org.sql2o.*;
+
+	public class DatabaseRule extends ExternalResource {
+
+	  @Override
+	  protected void before() {
+	    DB.sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${dbname}_test", null, null);
+	  }
+
+	  @Override
+	  protected void after() {
+	    try(Connection con = DB.sql2o.open()) {
+	    }
+	  }
+	}
+	END
+
+	cd "$projdir"
+	mkclass $@
+
+	touch $projdir/src/main/resources/public/app.css
+	touch $projdir/src/main/resources/public/js/scripts.js
+	cat >$projdir/src/main/java/App.java <<-END
+	import java.util.Map;
+	import java.util.HashMap;
+	import spark.ModelAndView;
+	import spark.template.velocity.VelocityTemplateEngine;
+	import static spark.Spark.*;
+
+	public class App {
+	  public static void main(String[] args) {
+	    // Use this setting only for development
+	    externalStaticFileLocation(String.format("%s/src/main/resources/public", System.getProperty("user.dir")));
+
+	    staticFileLocation("/public");
+	    String layout = "templates/layout.vtl";
+
+	    get("/", (request, response) -> {
+	      Map<String, Object> model = new HashMap<String, Object>();
+	      model.put("template", "templates/index.vtl");
+	      return new ModelAndView(model, layout);
+	    }, new VelocityTemplateEngine());
+
+	  }
+	}
+	END
+
+	cat >$projdir/src/main/java/DB.java <<-END
+	import org.sql2o.*;
+
+	public class DB {
+	  public static Sql2o sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${dbname}", null, null);
+	}
+	END
+
+	cat >$projdir/src/main/resources/templates/layout.vtl <<-END
+	<!DOCTYPE html>
+	<html>
+	  <head>
+	    <title>${projname}</title>
+	    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	    <link rel="stylesheet" href="/app.css">
+	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+	    <script src="/js/scripts.js"></script>
+	  </head>
+	  <body>
+	    <!-- begin inner template-->
+	    <div class="container">
+	      #parse( \$template )
+	    </div>
+	    <!-- end inner template-->
+	  </body>
+	</html>
+	END
+
+	cat >$projdir/src/main/resources/templates/index.vtl <<-END
+	<!--index.vtl-->
+
+	<!--index.vtl-->
+	END
+
+	cat >$projdir/build.gradle <<-END
+	apply plugin: 'java'
+	apply plugin: 'application'
+
+	archivesBaseName = "${dirname}"
+	version = '1.0'
+	mainClassName = "App"
+
+	repositories {
+	  mavenCentral()
+	}
+
+	dependencies {
+	  compile group: 'com.sparkjava', name: 'spark-core', version: '2.3'
+	  compile group: 'org.apache.velocity', name: 'velocity', version: '1.7'
+	  testCompile group: 'junit', name: 'junit', version: '4.+'
+	  compile group: 'org.sql2o', name: 'sql2o', version: '1.5.4'
+	  compile group: 'org.postgresql', name: 'postgresql', version: "9.4-1201-jdbc41"
+	}
+	END
+
+
+	cat >$projdir/.gitignore <<-END
+	# Compiled source #
+	############
+	*.com
+	*.class
+	*.dll
+	*.exe
+	*.o
+	*.so
+
+	# Packages #
+	############
+	*.7z
+	*.dmg
+	*.gz
+	*.iso
+	*.jar
+	*.rar
+	*.tar
+	*.zip
+
+	# Logs and databases #
+	############
+	*.log
+
+	# OS generated files #
+	############
+	.DS_Store
+	.DS_Store?
+	._*
+	.Spotlight-V100
+	.Trashes
+	ehthumbs.db
+	Thumbs.db
+
+	# Java and Gradle #
+	############
+	build/
+	.gradle/
+	END
+
+	cat >$projdir/README.md <<-END
+	# _${projname}_
+
+	#### _${projname}, $(date +%m-%d-%Y)_
+
+	#### By _**${users}**_
+
+	## Description
+	_Example text for the description of the project_
+
+
+	## Specifications
+
+	| Behavior                   | Input Example     | Output Example    |
+	| -------------------------- | -----------------:| -----------------:|
+
+
+
+	## Setup/Installation Requirements
+
+	* _Clone the repository_
+	* _Run the command 'gradle run'_
+	* _Open browser and go to localhost:4567_
+
+
+	### License
+
+	Copyright (c) $(date +%Y) **_${users}_**
+
+	This software is licensed under the MIT license.
+	END
+
+	curl -s https://raw.githubusercontent.com/perwendel/spark-template-engines/master/spark-template-velocity/src/main/java/spark/template/velocity/VelocityTemplateEngine.java -o $projdir/src/main/java/VelocityTemplateEngine.java
+
+	# Initalize git and make first commit
+	git init
+	git add .
+	if $alone; then
+		git commit -m "add initial project directories and files"
+	else
+		git pair $user1 $user2
+		git pair-commit -m "add initial project directories and files"
+	fi
+	apm install language-velocity
+	atom .
+}
+
+alias gpc='git pair-commit'
+
+export CLICOLOR=1
+alias ll='ls -alh'
+bind 'set completion-ignore-case on'

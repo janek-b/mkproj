@@ -1,19 +1,12 @@
 #!/usr/bin/env bash
-# - atom settings
-# - git pairs file
-# - README
-# - gitignore
-# - gulpfile
-# - git pairs password cache
 
-# atom settings. figure out sed insert mode.
 atomcfg() {
-	sed ' s/editor:/&\
-    scrollPastEnd: true\
-    showIndentGuide: true\
-    showInvisibles: true\
-    softWrap: true/
-	' ~/.atom/config.cson >> ~/.atom/tmpconfig.cson
+	local settings=("scrollPastEnd: true" "showIndentGuide: true" "showInvisibles: true" "softWrap: true")
+	for s in "${settings[@]}"; do
+		grep -q -e "$s" ~/.atom/config.cson || sed ' s/editor:/&\
+    '"$s"'/
+		' ~/.atom/config.cson >> ~/.atom/tmpconfig.cson
+	done
 	mv ~/.atom/tmpconfig.cson ~/.atom/config.cson
 }
 
@@ -31,69 +24,6 @@ toDashSeperated() {
 	local camel=$1
 	echo $(echo "$camel" | sed 's/\(.\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
 }
-
-mkclass() {
-	if [[ -d ./src/main/java ]]; then
-		# local dir=$(pwd)
-		# local db=$(echo "${dir##*/}" | sed 's/-/_/g')
-		for arg in $@; do
-			local classname=$(toCamelCase $arg)
-			local tablename=$(toDashSeperated $arg | sed 's/-/_/g')
-
-			if [[ -f ./src/test/java/DatabaseRule.java ]]; then
-				sed ' s/.*open().*/&\
-      String delete'${classname}'Query = "DELETE FROM '${tablename}'s *;";\
-      con.createQuery(delete'${classname}'Query).executeUpdate();/
-				' ./src/test/java/DatabaseRule.java >> ./src/test/java/TempDatabaseRule.java
-				mv ./src/test/java/TempDatabaseRule.java ./src/test/java/DatabaseRule.java
-			fi
-
-			cat >./src/main/java/$classname.java <<-END
-			import org.sql2o.*;
-			import java.util.Arrays;
-			import java.util.List;
-			import java.util.ArrayList;
-			import java.util.Date;
-			import java.util.Timer;
-			import java.util.TimerTask;
-			import java.sql.Timestamp;
-
-			public class ${classname} {
-
-			  public ${classname}() {
-
-			  }
-
-			}
-			END
-
-			cat >./src/test/java/${classname}Test.java <<-END
-			import org.sql2o.*;
-			import org.junit.*;
-			import static org.junit.Assert.*;
-			import java.util.Arrays;
-			import java.util.List;
-			import java.util.ArrayList;
-			import java.util.Date;
-			import java.util.Timer;
-			import java.util.TimerTask;
-			import java.sql.Timestamp;
-
-			public class ${classname}Test {
-
-			  @Rule
-			  public DatabaseRule database = new DatabaseRule();
-
-			}
-			END
-
-		done
-	else
-		echo "Error: no src/main/java directory found. You are not in the project root directory"
-	fi
-}
-
-
 
 mkproj() {
 	usage() {
@@ -125,7 +55,6 @@ mkproj() {
 	local dirname
 	local basedir
 	local projdir
-	local dbname
 	local user1
 	local user1full
 	local user1email
@@ -145,16 +74,6 @@ mkproj() {
 		esac
 	done
 	shift $((OPTIND - 1))
-
-	# Helper functions
-
-	### doesn't work in older bash version
-	# toCamelCase() {
-	# 	local dash=$1
-	# 	local arr=(${dash//-/ })
-	# 	echo "$(printf %s "${arr[@]^}")"
-	# }
-	###
 
 	if [[ $alone == false ]]; then
 		projname=$1
@@ -179,7 +98,6 @@ mkproj() {
 		basedir=~/Desktop
 	fi
 
-	dbname=$(echo "$dirname" | sed 's/-/_/g')
 	projdir=$basedir/$dirname
 
 	if $alone; then
@@ -215,171 +133,95 @@ mkproj() {
 		fi
 	fi
 
+	# cancel if directory already exists
 	if [[ -d $projdir ]]; then
 		echo "error: directory $projdir already exists" >&2
 		usage; return 1
 	fi
 
+
 	# make directories
-	mkdir -p $projdir/src/main/java $projdir/src/test/java $projdir/src/main/resources/public/images $projdir/src/main/resources/templates $projdir/src/main/resources/public/js
-
-	# create and populate files
-
-	cat >$projdir/src/test/java/DatabaseRule.java <<-END
-	import org.junit.rules.ExternalResource;
-	import org.sql2o.*;
-
-	public class DatabaseRule extends ExternalResource {
-
-	  @Override
-	  protected void before() {
-	    DB.sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${dbname}_test", null, null);
-	  }
-
-	  @Override
-	  protected void after() {
-	    try(Connection con = DB.sql2o.open()) {
-	    }
-	  }
-	}
-	END
-
+	mkdir -p $projdir/js $projdir/scss
 	cd "$projdir"
-	mkclass $@
+	# create and populate files
+	# static files
 
-	touch $projdir/src/main/resources/public/app.css
-	touch $projdir/src/main/resources/public/js/scripts.js
-	cat >$projdir/src/main/java/App.java <<-END
-	import java.util.Map;
-	import java.util.HashMap;
-	import spark.ModelAndView;
-	import spark.template.velocity.VelocityTemplateEngine;
-	import static spark.Spark.*;
+	# .gitignore file
+	curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/templates/gitignore -o $projdir/.gitignore
 
-	public class App {
-	  public static void main(String[] args) {
-	    // Use this setting only for development
-	    externalStaticFileLocation(String.format("%s/src/main/resources/public", System.getProperty("user.dir")));
+	# gulpfile.js
+	curl -s https://raw.githubusercontent.com/janek-b/mkproj/master/templates/gulpfile.js -o $projdir/gulpfile.js
 
-	    staticFileLocation("/public");
-	    String layout = "templates/layout.vtl";
+	# dynamic files
 
-	    get("/", (request, response) -> {
-	      Map<String, Object> model = new HashMap<String, Object>();
-	      model.put("template", "templates/index.vtl");
-	      return new ModelAndView(model, layout);
-	    }, new VelocityTemplateEngine());
-
-	  }
-	}
-	END
-
-	cat >$projdir/src/main/java/DB.java <<-END
-	import org.sql2o.*;
-
-	public class DB {
-	  public static Sql2o sql2o = new Sql2o("jdbc:postgresql://localhost:5432/${dbname}", null, null);
-	}
-	END
-
-	cat >$projdir/src/main/resources/templates/layout.vtl <<-END
+	# index.html
+	cat >$projdir/index.html <<-END
 	<!DOCTYPE html>
 	<html>
 	  <head>
+	    <link rel="stylesheet" href="build/css/vendor.css">
+	    <script src="build/js/vendor.min.js"></script>
+	    <script type="text/javascript" src="build/js/app.js"></script>
 	    <title>${projname}</title>
-	    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-	    <link rel="stylesheet" href="/app.css">
-	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-	    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-	    <script src="/js/scripts.js"></script>
 	  </head>
 	  <body>
-	    <!-- begin inner template-->
-	    <div class="container">
-	      #parse( \$template )
-	    </div>
-	    <!-- end inner template-->
+
 	  </body>
 	</html>
 	END
 
-	cat >$projdir/src/main/resources/templates/index.vtl <<-END
-	<!--index.vtl-->
-
-	<!--index.vtl-->
-	END
-
-	cat >$projdir/build.gradle <<-END
-	apply plugin: 'java'
-	apply plugin: 'application'
-
-	archivesBaseName = "${dirname}"
-	version = '1.0'
-	mainClassName = "App"
-
-	repositories {
-	  mavenCentral()
+	# packages.json
+	cat >$projdir/package.json <<-END
+	{
+	  "name": "$(toCamelCase $projname | awk '{print tolower($0)}')",
+	  "version": "1.0.0",
+	  "description": "",
+	  "main": "index.js",
+	  "scripts": {
+	    "test": "echo \"Error: no test specified\" && exit 1"
+	  },
+	  "author": "${users}",
+	  "license": "ISC",
+	  "devDependencies": {
+	    "bower-files": "^3.14.1",
+	    "browser-sync": "^2.18.8",
+	    "browserify": "^14.3.0",
+	    "del": "^2.2.2",
+	    "gulp": "^3.9.1",
+	    "gulp-concat": "^2.6.1",
+	    "gulp-jshint": "^2.0.4",
+	    "gulp-uglify": "^2.1.2",
+	    "gulp-util": "^3.0.8",
+	    "jshint": "^2.9.4",
+	    "vinyl-source-stream": "^1.1.0"
+	  }
 	}
+	END
 
-	dependencies {
-	  compile group: 'com.sparkjava', name: 'spark-core', version: '2.3'
-	  compile group: 'org.apache.velocity', name: 'velocity', version: '1.7'
-	  testCompile group: 'junit', name: 'junit', version: '4.+'
-	  compile group: 'org.sql2o', name: 'sql2o', version: '1.5.4'
-	  compile group: 'org.postgresql', name: 'postgresql', version: "9.4-1201-jdbc41"
+	# bower.json
+	cat >$projdir/bower.json <<-END
+	{
+	  "name": "$(toCamelCase $projname | awk '{print tolower($0)}')",
+	  "description": "",
+	  "main": "index.js",
+	  "license": "ISC",
+	  "homepage": "",
+	  "ignore": [
+	    "**/.*",
+	    "node_modules",
+	    "bower_components",
+	    "test",
+	    "tests"
+	  ],
+	  "dependencies": {
+	    "jquery": "^3.2.1",
+	    "bootstrap": "^3.3.7",
+	    "moment": "^2.18.1"
+	  }
 	}
 	END
 
-
-	cat >$projdir/.gitignore <<-END
-	# Compiled source #
-	############
-	*.com
-	*.class
-	*.dll
-	*.exe
-	*.o
-	*.so
-
-	# Packages #
-	############
-	*.7z
-	*.dmg
-	*.gz
-	*.iso
-	*.jar
-	*.rar
-	*.tar
-	*.zip
-
-	# Logs and databases #
-	############
-	*.log
-
-	# OS generated files #
-	############
-	.DS_Store
-	.DS_Store?
-	._*
-	.Spotlight-V100
-	.Trashes
-	ehthumbs.db
-	Thumbs.db
-
-	# Java and Gradle #
-	############
-	build/
-	.gradle/
-
-	# Javascript and Node #
-	############
-	node_modules/
-	bower_components/
-	build/
-	tmp/
-	.env
-	END
-
+	# README.md
 	cat >$projdir/README.md <<-END
 	# _${projname}_
 
@@ -401,9 +243,13 @@ mkproj() {
 	## Setup/Installation Requirements
 
 	* _Clone the repository_
-	* _Run the command 'gradle run'_
-	* _Open browser and go to localhost:4567_
-
+	* _Run the following commands_
+	\`\`\`
+	npm install
+	bower install
+	gulp build
+	gulp serve
+	\`\`\`
 
 	### License
 
@@ -412,9 +258,10 @@ mkproj() {
 	This software is licensed under the MIT license.
 	END
 
-	curl -s https://raw.githubusercontent.com/perwendel/spark-template-engines/master/spark-template-velocity/src/main/java/spark/template/velocity/VelocityTemplateEngine.java -o $projdir/src/main/java/VelocityTemplateEngine.java
-
 	# Initalize git and make first commit
+	npm install
+	bower install
+
 	git init
 	git add .
 	if $alone; then
@@ -423,7 +270,8 @@ mkproj() {
 		git pair $user1 $user2
 		git pair-commit -m "add initial project directories and files"
 	fi
-	apm install language-velocity
+
+	atomcfg
 	atom .
 }
 
