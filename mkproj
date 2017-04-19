@@ -6,7 +6,9 @@ atomcfg() {
 		grep -q -e "$s" ~/.atom/config.cson || sed ' s/editor:/&\
     '"$s"'/
 		' ~/.atom/config.cson >> ~/.atom/tmpconfig.cson
-		mv ~/.atom/tmpconfig.cson ~/.atom/config.cson
+		if [[ -f ~/.atom/tmpconfig.cson ]]; then
+			mv ~/.atom/tmpconfig.cson ~/.atom/config.cson
+		fi
 	done
 }
 
@@ -145,7 +147,7 @@ mkproj() {
 	cd "$projdir"
 	# create and populate files
 	# static files
-
+	touch $projdir/scss/styles.scss
 	# .gitignore file
 	curl -s https://raw.githubusercontent.com/janek-b/mkproj/js/templates/gitignore -o $projdir/.gitignore
 
@@ -160,6 +162,7 @@ mkproj() {
 	<html>
 	  <head>
 	    <link rel="stylesheet" href="build/css/vendor.css">
+	    <link rel="stylesheet" href="build/css/styles.css">
 	    <script src="build/js/vendor.min.js"></script>
 	    <script type="text/javascript" src="build/js/app.js"></script>
 	    <title>${projname}</title>
@@ -190,6 +193,8 @@ mkproj() {
 	    "gulp": "^3.9.1",
 	    "gulp-concat": "^2.6.1",
 	    "gulp-jshint": "^2.0.4",
+	    "gulp-sass": "^3.1.0",
+	    "gulp-sourcemaps": "^2.6.0",
 	    "gulp-uglify": "^2.1.2",
 	    "gulp-util": "^3.0.8",
 	    "jshint": "^2.9.4",
